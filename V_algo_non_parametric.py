@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from utils import deco_print
 from utils import poisson_initialization_n
 from utils import random_initialization_n
-from utils import greedy
 from utils import greedy_alpha
 from utils import obj_fun
 from utils import update_tables
@@ -13,7 +12,7 @@ from utils import sample
 
 ### define parameters
 N = 20
-V_max = 300
+V_max = 50
 I = 30
 alpha = 0.001
 n_iter = 50

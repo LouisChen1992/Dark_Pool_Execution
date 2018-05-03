@@ -22,7 +22,6 @@ class RandomVariable:
 		else:
 			return 1.0-self._T[x]
 
-
 def deco_print(line, end='\n'):
 	print('>==================> ' + line, end=end)
 
@@ -82,6 +81,8 @@ def greedy(N, rho, T, V):
 		temp = T_rho[np.arange(N), v]
 		idx = p[np.argmax(temp[p])]
 		v[idx] += 1
+		if max(v) == T_rho.shape[1]:
+			T_rho = np.pad(T_rho, ((0,0),(0,1)), 'constant')
 	return v
 
 def greedy_alpha(N, rho, T, alpha):
@@ -92,6 +93,8 @@ def greedy_alpha(N, rho, T, alpha):
 		temp = T_rho[np.arange(N), v]
 		idx = p[np.argmax(temp[p])]
 		v[idx] += 1
+		if max(v) == T_rho.shape[1]:
+			T_rho = np.pad(T_rho, ((0,0),(0,1)), 'constant')
 	V = np.sum(v)
 	return v, V
 

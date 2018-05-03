@@ -13,7 +13,7 @@ from utils import sample
 
 ### define parameters
 N = 20
-V_max = 300
+V_max = 50
 I = 30
 alpha = 0.001
 K = 20
