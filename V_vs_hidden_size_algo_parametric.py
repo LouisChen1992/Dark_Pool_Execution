@@ -25,7 +25,7 @@ n_iter = 100
 ### NN parameters
 input_dim = 2
 num_layer = 1
-hidden_size = 30
+hidden_size_list = [5, 10, 20, 30]
 ###
 
 case = 1
@@ -67,53 +67,43 @@ deco_print('Optimal allocation: ' + str(v_opt))
 plt.figure('Figure 1')
 plt.axhline(y=V_opt, xmin=0, xmax=V_max, color='black')
 
-tables_nn = [np.zeros((V_max,3), dtype=int) for _ in range(N)]
-tables_logistic = [np.zeros((V_max,3), dtype=int) for _ in range(N)]
-
-nn_models = dict()
-logistic_models = dict()
-for i in range(N):
-	deco_print('Creating model %d' %i, end='\r')
-	nn_models[i] = Parametric_Model('nn%d'%i, V_max, input_dim=input_dim, num_layer=num_layer, hidden_size=hidden_size)
-	logistic_models[i] = Parametric_Model('logistic%d'%i, V_max, input_dim=input_dim, num_layer=0, hidden_size=0)
-
-sess = tf.Session()
-sess.run(tf.global_variables_initializer())
-
 X_input = np.array([np.ones(V_max)]+[i*np.log(np.arange(V_max)+1) for i in range(1,input_dim)]).T
+V_est = np.zeros((len(hidden_size_list), n_iter), dtype=int)
 
-V_est_nn = []
-V_est_logistic = []
-
-h_hat_nn = np.zeros((N, V_max))
-loss_nn = np.zeros(N)
-h_hat_logistic = np.zeros((N, V_max))
-loss_logistic = np.zeros(N)
+for k in range(len(hidden_size_list)):
+	hidden_size = hidden_size_list[k]
 	
-for t in range(n_iter):
+	tables = [np.zeros((V_max,3), dtype=int) for _ in range(N)]
+
+	models = dict()
 	for i in range(N):
-		h_hat_nn[i], loss_nn[i] = get_h_and_loss_from_model(nn_models[i], X_input, tables_nn[i], sess)
-		h_hat_logistic[i], loss_logistic[i] = get_h_and_loss_from_model(logistic_models[i], X_input, tables_logistic[i], sess)
-	T_hat_nn = h2T(h_hat_nn)
-	T_hat_logistic = h2T(h_hat_logistic)
-	v_t_nn, V_t_nn = greedy_alpha(N, rho, T_hat_nn, alpha)
-	v_t_logistic, V_t_logistic = greedy_alpha(N, rho, T_hat_logistic, alpha)
-	print(V_t_nn)
-	print(V_t_logistic)
-	V_est_nn.append(V_t_nn)
-	V_est_logistic.append(V_t_logistic)
-	for _ in range(I):
-		r_t_nn = sample(N, rv, v_t_nn)
-		r_t_logistic = sample(N, rv, v_t_logistic)
-		update_tables(N, tables_nn, r_t_nn, v_t_nn)
-		update_tables(N, tables_logistic, r_t_logistic, v_t_logistic)
-	for i in range(N):
-		loss_nn[i] = train_model(nn_models[i], X_input, tables_nn[i], sess, loss_nn[i])
-		loss_logistic[i] = train_model(logistic_models[i], X_input, tables_logistic[i], sess, loss_logistic[i])
+		deco_print('Creating model %d' %i, end='\r')
+		models[i] = Parametric_Model('nn_%d_%d'%(k,i), V_max, input_dim=input_dim, num_layer=num_layer, hidden_size=hidden_size)
+
+	sess = tf.Session()
+	sess.run(tf.global_variables_initializer())
+
+	h_hat = np.zeros((N, V_max))
+	loss = np.zeros(N)
+	
+	for t in range(n_iter):
+		for i in range(N):
+			h_hat[i], loss[i] = get_h_and_loss_from_model(models[i], X_input, tables[i], sess)
+		T_hat = h2T(h_hat)
+		v_t, V_t = greedy_alpha(N, rho, T_hat, alpha)
+		print(V_t)
+		V_est[k,t] = V_t
+		for _ in range(I):
+			r_t = sample(N, rv, v_t)
+			update_tables(N, tables, r_t, v_t)
+		for i in range(N):
+			loss[i] = train_model(models[i], X_input, tables[i], sess, loss[i])
 	print('\n')
 
-plt.plot(np.arange(n_iter), V_est_nn, color='b', label='NN')
-plt.plot(np.arange(n_iter), V_est_logistic, color='r', label='logistic')
+plt.plot(np.arange(n_iter), V_est[0], color='b', label='hidden size %d'%hidden_size_list[0])
+plt.plot(np.arange(n_iter), V_est[1], color='r', label='hidden size %d'%hidden_size_list[1])
+plt.plot(np.arange(n_iter), V_est[2], color='y', label='hidden size %d'%hidden_size_list[2])
+plt.plot(np.arange(n_iter), V_est[3], color='m', label='hidden size %d'%hidden_size_list[3])
 plt.xlabel('t')
 plt.ylabel(r'Volume $\hat{V}^t$')
 plt.legend()
