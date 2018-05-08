@@ -79,7 +79,7 @@ X_input = np.array([np.ones(V_max)]+[i*np.log(np.arange(V_max)+1) for i in range
 
 for k in range(n_simulation):
 	sess.run(tf.global_variables_initializer())
-
+	print('Iter #%d...'%k)
 	tables = [np.zeros((V_max,3), dtype=int) for _ in range(N)]
 	h_hat = np.zeros((N, V_max))
 	loss = np.zeros(N)
