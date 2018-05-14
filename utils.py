@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import poisson
+from scipy.stats import poisson, zipf
 
 class RandomVariable:
 	def __init__(self, h):
@@ -48,6 +48,16 @@ def poisson_initialization_n(N, lams, V_max):
 	"""
 	assert(N == len(lams))
 	rv = [poisson(lam) for lam in lams]
+	T = np.zeros((N, V_max))
+	for i in range(N):
+		for j in range(V_max):
+			T[i,j] = 1 - rv[i].cdf(j)
+	h = T2h(T)
+	return rv, T, h
+
+def zipf_initialization_n(N, alphas, V_max):
+	assert(N == len(alphas))
+	rv = [zipf(alpha) for alpha in alphas]
 	T = np.zeros((N, V_max))
 	for i in range(N):
 		for j in range(V_max):

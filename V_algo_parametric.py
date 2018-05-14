@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from utils import deco_print
 from utils import h2T
 from utils import poisson_initialization_n
+from utils import zipf_initialization_n
 from utils import random_initialization_n
 from utils import greedy_alpha
 from utils import obj_fun
@@ -19,7 +20,7 @@ N = 20
 V_max = 50
 I = 30
 alpha = 0.001
-n_iter = 100
+n_iter = 1000 #100
 ###
 
 ### NN parameters
@@ -56,6 +57,18 @@ elif case in [3,4]:
 	### Case III & IV
 	rv, T, h = random_initialization_n(N, hs, V_max)
 	deco_print('The maximum number of volume that can be executed in dark pools follow a distribution specified by h. ')
+elif case in [5,6]:
+	if case == 5:
+		alphas = np.array([1.2]*N)
+		rho = np.array([0.002]*N)
+		title = 'Case V'
+	else:
+		alphas = np.array([1.2]*4+[1.5]*8+[2.0]*8)
+		rho = np.array([0.002]*8+[0.005]*8+[0.01]*4)
+		title = 'Case VI'
+	### Case V & VI
+	rv, T, h = zipf_initialization_n(N, alphas, V_max)
+	deco_print('The maximum number of volume that can be executed in dark pools follow Zipf\'s distribution with parameters ' + str(alphas) + '. ')
 
 f, _ = obj_fun(rho, T, V_max)
 v_opt, V_opt = greedy_alpha(N, rho, T, alpha)
@@ -67,27 +80,27 @@ deco_print('Optimal allocation: ' + str(v_opt))
 plt.figure('Figure 1')
 plt.axhline(y=V_opt, xmin=0, xmax=V_max, color='black')
 
-tables_nn = [np.zeros((V_max,3), dtype=int) for _ in range(N)]
-tables_logistic = [np.zeros((V_max,3), dtype=int) for _ in range(N)]
+tables_nn = [np.zeros((V_max+1,3), dtype=int) for _ in range(N)]
+tables_logistic = [np.zeros((V_max+1,3), dtype=int) for _ in range(N)]
 
 nn_models = dict()
 logistic_models = dict()
 for i in range(N):
 	deco_print('Creating model %d' %i, end='\r')
-	nn_models[i] = Parametric_Model('nn%d'%i, V_max, input_dim=input_dim, num_layer=num_layer, hidden_size=hidden_size)
-	logistic_models[i] = Parametric_Model('logistic%d'%i, V_max, input_dim=input_dim, num_layer=0, hidden_size=0)
+	nn_models[i] = Parametric_Model('nn%d'%i, V_max+1, input_dim=input_dim, num_layer=num_layer, hidden_size=hidden_size)
+	logistic_models[i] = Parametric_Model('logistic%d'%i, V_max+1, input_dim=input_dim, num_layer=0, hidden_size=0)
 
 sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
-X_input = np.array([np.ones(V_max)]+[i*np.log(np.arange(V_max)+1) for i in range(1,input_dim)]).T
+X_input = np.array([np.ones(V_max+1)]+[i*np.log(np.arange(V_max+1)+1) for i in range(1,input_dim)]).T
 
 V_est_nn = []
 V_est_logistic = []
 
-h_hat_nn = np.zeros((N, V_max))
+h_hat_nn = np.zeros((N, V_max+1))
 loss_nn = np.zeros(N)
-h_hat_logistic = np.zeros((N, V_max))
+h_hat_logistic = np.zeros((N, V_max+1))
 loss_logistic = np.zeros(N)
 	
 for t in range(n_iter):
@@ -96,8 +109,8 @@ for t in range(n_iter):
 		h_hat_logistic[i], loss_logistic[i] = get_h_and_loss_from_model(logistic_models[i], X_input, tables_logistic[i], sess)
 	T_hat_nn = h2T(h_hat_nn)
 	T_hat_logistic = h2T(h_hat_logistic)
-	v_t_nn, V_t_nn = greedy_alpha(N, rho, T_hat_nn, alpha)
-	v_t_logistic, V_t_logistic = greedy_alpha(N, rho, T_hat_logistic, alpha)
+	v_t_nn, V_t_nn = greedy_alpha(N, rho, T_hat_nn[:,:-1], alpha)
+	v_t_logistic, V_t_logistic = greedy_alpha(N, rho, T_hat_logistic[:,:-1], alpha)
 	print(V_t_nn)
 	print(V_t_logistic)
 	V_est_nn.append(V_t_nn)

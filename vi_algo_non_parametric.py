@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 
 from utils import deco_print
 from utils import poisson_initialization_n
+from utils import zipf_initialization_n
 from utils import random_initialization_n
 from utils import greedy
 from utils import greedy_alpha
@@ -51,6 +52,19 @@ elif case in [3,4]:
 	### Case III & IV
 	rv, T, h = random_initialization_n(N, hs, V_max)
 	deco_print('The maximum number of volume that can be executed in dark pools follow a distribution specified by h. ')
+elif case in [5,6]:
+	if case == 5:
+		alphas = np.array([1.2]*N)
+		rho = np.array([0.002]*N)
+		title = 'Case V'
+	else:
+		alphas = np.array([1.2]*4+[1.5]*8+[2.0]*8)
+		rho = np.array([0.002]*8+[0.005]*8+[0.01]*4)
+		title = 'Case VI'
+	### Case V & VI
+	rv, T, h = zipf_initialization_n(N, alphas, V_max)
+	deco_print('The maximum number of volume that can be executed in dark pools follow Zipf\'s distribution with parameters ' + str(alphas) + '. ')
+
 
 f, _ = obj_fun(rho, T, V_max)
 v_opt, V_opt = greedy_alpha(N, rho, T, alpha)

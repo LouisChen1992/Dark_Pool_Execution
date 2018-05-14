@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from utils import deco_print
 from utils import h2T
 from utils import poisson_initialization_n
+from utils import zipf_initialization_n
 from utils import random_initialization_n
 from utils import greedy_alpha
 from utils import obj_fun
@@ -19,7 +20,7 @@ N = 20
 V_max = 50
 I = 30
 alpha = 0.001
-n_iter = 100
+n_iter = 1000 #100
 n_simulation = 50
 ###
 
@@ -57,6 +58,19 @@ elif case in [3,4]:
 	### Case III & IV
 	rv, T, h = random_initialization_n(N, hs, V_max)
 	deco_print('The maximum number of volume that can be executed in dark pools follow a distribution specified by h. ')
+elif case in [5,6]:
+	if case == 5:
+		alphas = np.array([1.2]*N)
+		rho = np.array([0.002]*N)
+		title = 'Case V'
+	else:
+		alphas = np.array([1.2]*4+[1.5]*8+[2.0]*8)
+		rho = np.array([0.002]*8+[0.005]*8+[0.01]*4)
+		title = 'Case VI'
+	### Case V & VI
+	rv, T, h = zipf_initialization_n(N, alphas, V_max)
+	deco_print('The maximum number of volume that can be executed in dark pools follow Zipf\'s distribution with parameters ' + str(alphas) + '. ')
+
 
 f, _ = obj_fun(rho, T, V_max)
 v_opt, V_opt = greedy_alpha(N, rho, T, alpha)
@@ -71,24 +85,24 @@ v_out = np.zeros((n_simulation, N))
 models = dict()
 for i in range(N):
 	deco_print('Creating model %d' %i, end='\r')
-	models[i] = Parametric_Model('nn%d'%i, V_max, input_dim=input_dim, num_layer=num_layer, hidden_size=hidden_size)
+	models[i] = Parametric_Model('nn%d'%i, V_max+1, input_dim=input_dim, num_layer=num_layer, hidden_size=hidden_size)
 
 sess = tf.Session()
 
-X_input = np.array([np.ones(V_max)]+[i*np.log(np.arange(V_max)+1) for i in range(1,input_dim)]).T
+X_input = np.array([np.ones(V_max+1)]+[i*np.log(np.arange(V_max+1)+1) for i in range(1,input_dim)]).T
 
 for k in range(n_simulation):
 	sess.run(tf.global_variables_initializer())
 	print('Iter #%d...'%k)
-	tables = [np.zeros((V_max,3), dtype=int) for _ in range(N)]
-	h_hat = np.zeros((N, V_max))
+	tables = [np.zeros((V_max+1,3), dtype=int) for _ in range(N)]
+	h_hat = np.zeros((N, V_max+1))
 	loss = np.zeros(N)
 
 	for t in range(n_iter):
 		for i in range(N):
 			h_hat[i], loss[i] = get_h_and_loss_from_model(models[i], X_input, tables[i], sess)
 		T_hat = h2T(h_hat)
-		v_t, V_t = greedy_alpha(N, rho, T_hat, alpha)
+		v_t, V_t = greedy_alpha(N, rho, T_hat[:,:-1], alpha)
 		print(V_t)
 		for _ in range(I):
 			r_t = sample(N, rv, v_t)
