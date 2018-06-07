@@ -8,10 +8,12 @@ def get_h_and_loss_from_model(model, X, table, sess):
 def train_model(model, X, table, sess, old_loss, eps=1.e-4):
 	feed_dict = {model.input_placeholder:X, model.s_placeholder:table[:,1], model.n_placeholder:table[:,0], model.dp_placeholder:1.0}
 	_, new_loss = sess.run([model.train_op, model.loss], feed_dict=feed_dict)
+	num_steps = 0
 	while abs(new_loss - old_loss) > eps:
 		old_loss = new_loss
 		_, new_loss = sess.run([model.train_op, model.loss], feed_dict=feed_dict)
-	return new_loss
+		num_steps += 1
+	return new_loss, num_steps
 
 class Parametric_Model:
 	def __init__(self, model, V_max, input_dim=2, num_layer=0, hidden_size=4):

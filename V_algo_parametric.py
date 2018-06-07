@@ -20,7 +20,7 @@ N = 20
 V_max = 50
 I = 30
 alpha = 0.001
-n_iter = 1000 #100
+n_iter = 300 #1000 #100
 ###
 
 ### NN parameters
@@ -100,8 +100,11 @@ V_est_logistic = []
 
 h_hat_nn = np.zeros((N, V_max+1))
 loss_nn = np.zeros(N)
+num_steps_nn = np.zeros((N, n_iter), dtype=int)
 h_hat_logistic = np.zeros((N, V_max+1))
 loss_logistic = np.zeros(N)
+num_steps_logistic = np.zeros((N, n_iter), dtype=int)
+
 	
 for t in range(n_iter):
 	for i in range(N):
@@ -121,9 +124,13 @@ for t in range(n_iter):
 		update_tables(N, tables_nn, r_t_nn, v_t_nn)
 		update_tables(N, tables_logistic, r_t_logistic, v_t_logistic)
 	for i in range(N):
-		loss_nn[i] = train_model(nn_models[i], X_input, tables_nn[i], sess, loss_nn[i])
-		loss_logistic[i] = train_model(logistic_models[i], X_input, tables_logistic[i], sess, loss_logistic[i])
+		loss_nn[i], step_nn = train_model(nn_models[i], X_input, tables_nn[i], sess, loss_nn[i])
+		loss_logistic[i], step_logistic = train_model(logistic_models[i], X_input, tables_logistic[i], sess, loss_logistic[i])
+		num_steps_nn[i,t] = step_nn
+		num_steps_logistic[i,t] = step_logistic
 	print('\n')
+
+np.savez('GradientSteps_%d.npz' %case, nn=num_steps_nn, logistic=num_steps_logistic)
 
 plt.plot(np.arange(n_iter), V_est_nn, color='b', label='NN')
 plt.plot(np.arange(n_iter), V_est_logistic, color='r', label='logistic')

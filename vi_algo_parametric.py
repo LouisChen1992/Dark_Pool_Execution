@@ -20,7 +20,7 @@ N = 20
 V_max = 50
 I = 30
 alpha = 0.001
-n_iter = 1000 #100
+n_iter = 300 #1000 #100
 n_simulation = 50
 ###
 
@@ -108,7 +108,7 @@ for k in range(n_simulation):
 			r_t = sample(N, rv, v_t)
 			update_tables(N, tables, r_t, v_t)
 		for i in range(N):
-			loss[i] = train_model(models[i], X_input, tables[i], sess, loss[i])
+			loss[i], _ = train_model(models[i], X_input, tables[i], sess, loss[i])
 	v_out[k] = v_t
 	print('\n')
 
