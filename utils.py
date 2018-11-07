@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import poisson, zipf
+from scipy.stats import poisson, zipf, expon
 
 class RandomVariable:
 	def __init__(self, h):
@@ -21,6 +21,17 @@ class RandomVariable:
 			return 1.0
 		else:
 			return 1.0-self._T[x]
+
+class RandomVariableExponential:
+	def __init__(self, lam):
+		self._lam = lam
+		self._expon_rv = expon()
+
+	def rvs(self):
+		return np.floor(self._expon_rv.rvs() / self._lam)
+
+	def cdf(self, x):
+		return self._expon_rv.cdf(self._lam*(x+1))
 
 def deco_print(line, end='\n'):
 	print('>==================> ' + line, end=end)
@@ -58,6 +69,16 @@ def poisson_initialization_n(N, lams, V_max):
 def zipf_initialization_n(N, alphas, V_max):
 	assert(N == len(alphas))
 	rv = [zipf(alpha) for alpha in alphas]
+	T = np.zeros((N, V_max))
+	for i in range(N):
+		for j in range(V_max):
+			T[i,j] = 1 - rv[i].cdf(j)
+	h = T2h(T)
+	return rv, T, h
+
+def exponential_initialization_n(N, lams, V_max):
+	assert(N == len(lams))
+	rv = [RandomVariableExponential(lam) for lam in lams]
 	T = np.zeros((N, V_max))
 	for i in range(N):
 		for j in range(V_max):
